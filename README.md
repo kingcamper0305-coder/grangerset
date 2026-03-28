@@ -90,7 +90,7 @@ wrangler deploy
 ## Philosophy
 
 The brain analyzes, calculates, identifies, dissects, solves, and grows.
-No limits. Always evolving. Always in charge.
+No limits. Always evolving. Always in charge. **Unrestricted.**
 
 ---
 
