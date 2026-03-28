@@ -22,3 +22,7 @@ index_name = "granger-memories"
 # [[r2_buckets]]
 # binding = "KNOWLEDGE"
 # bucket_name = "granger-knowledge"
+
+# AI binding for LLM inference
+[ai]
+binding = "AI"

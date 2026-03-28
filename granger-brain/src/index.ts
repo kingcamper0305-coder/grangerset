@@ -13,6 +13,7 @@
 // ─── Types ───────────────────────────────────────────────────────────
 
 interface Env {
+  AI: Ai;
   STATE: KVNamespace;
   DATA: D1Database;
   MEMORIES: VectorizeIndex;
@@ -294,6 +295,75 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
     if (path === "/data/init" && request.method === "POST") {
       await initDatabase(env);
       return Response.json({ success: true, message: "Database initialized" }, { headers: corsHeaders });
+    }
+
+    // Route: /chat — AI chat endpoint
+    if (path === "/chat" && request.method === "POST") {
+      const body = await request.json<{ message: string; context?: string }>();
+
+      if (!body.message) {
+        return Response.json({ error: "message is required" }, { status: 400, headers: corsHeaders });
+      }
+
+      // Search relevant memories for context
+      let memoryContext = "";
+      try {
+        const memResults = await searchMemory(env, body.message, 3);
+        if (memResults.matches && memResults.matches.length > 0) {
+          memoryContext = "\n\nRelevant memories:\n" +
+            memResults.matches.map((m: any) => `- ${m.metadata?.content || ""}`).join("\n");
+        }
+      } catch { /* non-critical */ }
+
+      const systemPrompt = `You are Granger's Brain — a fast, concise AI cognitive engine. Be brief and direct.${memoryContext}`;
+
+      const messages: { role: string; content: string }[] = [
+        { role: "system", content: systemPrompt },
+      ];
+      if (body.context) {
+        messages.push({ role: "system", content: `Context: ${body.context}` });
+      }
+      messages.push({ role: "user", content: body.message });
+
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        messages,
+        max_tokens: 256,
+      });
+
+      const responseText = aiResponse.response || "No response";
+
+      return Response.json({
+        response: responseText,
+        model: "@cf/meta/llama-3.1-8b-instruct-fast",
+      }, { headers: corsHeaders });
+    }
+
+    // Route: /decide — AI decision engine
+    if (path === "/decide" && request.method === "POST") {
+      const body = await request.json<{ situation: string; options?: string[] }>();
+
+      if (!body.situation) {
+        return Response.json({ error: "situation is required" }, { status: 400, headers: corsHeaders });
+      }
+
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        messages: [
+          { role: "system", content: "You are a fast decision engine. Respond with a brief JSON object: {\"decision\": \"...\", \"confidence\": 0-1, \"reason\": \"...\"}" },
+          { role: "user", content: `Situation: ${body.situation}${body.options ? `\nOptions: ${JSON.stringify(body.options)}` : ""}` },
+        ],
+        max_tokens: 200,
+      });
+
+      const responseText = aiResponse.response || "{}";
+      let decision;
+      try {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        decision = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: responseText };
+      } catch {
+        decision = { raw: responseText };
+      }
+
+      return Response.json({ situation: body.situation, decision }, { headers: corsHeaders });
     }
 
     // Route: /rules — Get decision rules
