@@ -37,6 +37,7 @@ openclaw-key.pem
 # OpenClaw internals
 .openclaw/
 .clawhub/
+.wrangler/
 
 # Temp
 tmp/
