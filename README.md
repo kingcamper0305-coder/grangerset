@@ -12,7 +12,6 @@ grangerset/
 │   └── wrangler.toml       Cloudflare config (KV, D1, Vectorize, AI)
 │
 ├── empire/                 🏗️ Granger Engine
-│   ├── brain/              Decision engine, vector memory, knowledge indexer
 │   ├── bridge/             Browser bridge (extension + server)
 │   ├── scripts/            Automation scripts
 │   ├── tools/              Utilities & dashboards

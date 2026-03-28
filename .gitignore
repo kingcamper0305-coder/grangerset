@@ -13,10 +13,11 @@ __pycache__/
 .venv/
 venv/
 
-# Data
+# Data / Cache
 data/
 *.sqlite3
 *.db
+*.log
 
 # Logs
 *.log
