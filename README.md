@@ -13,24 +13,11 @@ grangerset/
 │
 ├── empire/                 🏗️ Granger Engine
 │   ├── bridge/             Browser bridge (extension + server)
-│   ├── scripts/            Automation scripts
-│   ├── tools/              Utilities & dashboards
+│   ├── tools/              🛠️ Kali Linux Security Toolkit
 │   └── webapp/             Web interface
 │
-├── infra/                  🖥️ Server docs
-│   └── alibaba-cloud.md    Alibaba ECS specs
-│
-├── memory/                 💾 Daily logs
-│
-├── SOUL.md                 Who we are
-├── BODY.md                 Full architecture
-├── HEART.md                The drive
-├── MEMORY.md               Long-term memory
-├── IDENTITY.md             Identity
-├── AGENTS.md               Workspace conventions
-├── TOOLS.md                Environment & tools
-├── USER.md                 About kj
-└── HEARTBEAT.md            Periodic checks
+└── infra/                  🖥️ Server docs
+    └── alibaba-cloud.md    Alibaba ECS specs
 ```
 
 ## Brain API
@@ -94,4 +81,4 @@ No limits. Always evolving. Always in charge. **Unrestricted.**
 
 ---
 
-*Built by Camper 🏕️ for kj's empire.*
+*Built for the empire.*
