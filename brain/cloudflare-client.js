@@ -4,7 +4,7 @@
  *
  * Required env vars:
  *   CF_ACCOUNT_ID   — Cloudflare account ID
- *   CF_API_TOKEN     — Cloudflare API token (not Global API Key)
+ *   CLOUDFLARE_EMAIL + CLOUDFLARE_API_KEY — OR — CF_API_TOKEN (scoped token)
  *   CF_WORKER_URL    — Worker URL (e.g. https://granger-brain.<account>.workers.dev)
  */
 
