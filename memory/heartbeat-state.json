@@ -1,0 +1,9 @@
+{
+  "lastChecks": {
+    "serverHealth": 1743164412,
+    "airdrops": 1743164412,
+    "telegramBots": null,
+    "revenue": null
+  },
+  "notes": "First heartbeat. Server healthy. Airdrops page needs browser for full scrape."
+}
