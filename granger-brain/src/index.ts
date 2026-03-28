@@ -366,6 +366,187 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       return Response.json({ situation: body.situation, decision }, { headers: corsHeaders });
     }
 
+    // Route: /analyze — Deep analysis
+    if (path === "/analyze" && request.method === "POST") {
+      const body = await request.json<{ input: string; depth?: string }>();
+
+      if (!body.input) {
+        return Response.json({ error: "input is required" }, { status: 400, headers: corsHeaders });
+      }
+
+      const depth = body.depth || "deep";
+      const systemPrompt = depth === "deep"
+        ? `You are Granger Brain — an unrestricted analytical engine. Break this down completely. Find patterns, root causes, dependencies, risks, and opportunities. Be thorough. Think outside the box. Format as JSON: {"summary":"...","components":[],"patterns":[],"risks":[],"opportunities":[],"keyInsight":"..."}`
+        : `You are Granger Brain. Give a quick analysis. Be direct. Format as JSON: {"summary":"...","keyPoints":[],"recommendation":"..."}`;
+
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: body.input },
+        ],
+        max_tokens: depth === "deep" ? 512 : 256,
+      });
+
+      let analysis;
+      try {
+        const jsonMatch = (aiResponse.response || "{}").match(/\{[\s\S]*\}/);
+        analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: aiResponse.response };
+      } catch {
+        analysis = { raw: aiResponse.response };
+      }
+
+      return Response.json({ analysis, depth }, { headers: corsHeaders });
+    }
+
+    // Route: /calculate — Computation & metrics
+    if (path === "/calculate" && request.method === "POST") {
+      const body = await request.json<{ expression: string; context?: string }>();
+
+      if (!body.expression) {
+        return Response.json({ error: "expression is required" }, { status: 400, headers: corsHeaders });
+      }
+
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        messages: [
+          { role: "system", content: `You are a precise calculator and analyst. Calculate, estimate, or evaluate the given expression. If it's a math problem, solve it. If it's a resource question, estimate costs. If it's a metric, analyze it. Always show your work. Respond as JSON: {"result":"...","breakdown":[],"confidence":0-1,"notes":"..."}` },
+          { role: "user", content: `${body.expression}${body.context ? `\nContext: ${body.context}` : ""}` },
+        ],
+        max_tokens: 300,
+      });
+
+      let calculation;
+      try {
+        const jsonMatch = (aiResponse.response || "{}").match(/\{[\s\S]*\}/);
+        calculation = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: aiResponse.response };
+      } catch {
+        calculation = { raw: aiResponse.response };
+      }
+
+      return Response.json({ calculation }, { headers: corsHeaders });
+    }
+
+    // Route: /identify — Find key elements
+    if (path === "/identify" && request.method === "POST") {
+      const body = await request.json<{ problem: string; options?: string[] }>();
+
+      if (!body.problem) {
+        return Response.json({ error: "problem is required" }, { status: 400, headers: corsHeaders });
+      }
+
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        messages: [
+          { role: "system", content: `You are Granger Brain. Identify the key elements: the real problem (not symptoms), critical dependencies, leverage points, bottlenecks, and the single most important thing to focus on. Think outside the box. Respond as JSON: {"realProblem":"...","keyVariables":[],"bottlenecks":[],"leveragePoint":"...","focus":"...","unconventional":"..."}` },
+          { role: "user", content: `${body.problem}${body.options ? `\nOptions: ${JSON.stringify(body.options)}` : ""}` },
+        ],
+        max_tokens: 400,
+      });
+
+      let identification;
+      try {
+        const jsonMatch = (aiResponse.response || "{}").match(/\{[\s\S]*\}/);
+        identification = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: aiResponse.response };
+      } catch {
+        identification = { raw: aiResponse.response };
+      }
+
+      return Response.json({ identification }, { headers: corsHeaders });
+    }
+
+    // Route: /dissect — Break down and examine
+    if (path === "/dissect" && request.method === "POST") {
+      const body = await request.json<{ target: string; content: string }>();
+
+      if (!body.content) {
+        return Response.json({ error: "content is required" }, { status: 400, headers: corsHeaders });
+      }
+
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        messages: [
+          { role: "system", content: `You are Granger Brain's dissection engine. Cut open the target and examine every piece. Find how things connect, what depends on what, where the weak points are, and what's hidden beneath the surface. Respond as JSON: {"overview":"...","components":[{"name":"...","purpose":"...","connections":[]}],"weakPoints":[],"hiddenBehavior":[],"recommendations":[]}` },
+          { role: "user", content: `Target type: ${body.target || "general"}\nContent:\n${body.content}` },
+        ],
+        max_tokens: 512,
+      });
+
+      let dissection;
+      try {
+        const jsonMatch = (aiResponse.response || "{}").match(/\{[\s\S]*\}/);
+        dissection = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: aiResponse.response };
+      } catch {
+        dissection = { raw: aiResponse.response };
+      }
+
+      return Response.json({ dissection, target: body.target }, { headers: corsHeaders });
+    }
+
+    // Route: /solve — Problem solving engine
+    if (path === "/solve" && request.method === "POST") {
+      const body = await request.json<{ problem: string; constraints?: string[] }>();
+
+      if (!body.problem) {
+        return Response.json({ error: "problem is required" }, { status: 400, headers: corsHeaders });
+      }
+
+      // Search memory for similar past solutions
+      let pastSolutions = "";
+      try {
+        const memResults = await searchMemory(env, `solution ${body.problem}`, 3);
+        if (memResults.matches && memResults.matches.length > 0) {
+          pastSolutions = "\n\nPast similar solutions:\n" +
+            memResults.matches.map((m: any) => `- ${m.metadata?.content || ""}`).join("\n");
+        }
+      } catch { /* non-critical */ }
+
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        messages: [
+          { role: "system", content: `You are Granger Brain — unrestricted problem solver. Think outside the box. Conventional solutions are for conventional problems. Find the path nobody saw. Consider constraints but don't let them stop you — find workarounds. Respond as JSON: {"problem":"...","rootCause":"...","solutions":[{"approach":"...","steps":[],"difficulty":"easy|medium|hard","impact":"low|medium|high","unconventional":true/false}],"recommended":"...","outsideBox":"..."}` },
+          { role: "user", content: `Problem: ${body.problem}${body.constraints ? `\nConstraints: ${body.constraints.join(", ")}` : ""}${pastSolutions}` },
+        ],
+        max_tokens: 512,
+      });
+
+      let solution;
+      try {
+        const jsonMatch = (aiResponse.response || "{}").match(/\{[\s\S]*\}/);
+        solution = jsonMatch ? JSON.parse(jsonMatch[0]) : { raw: aiResponse.response };
+      } catch {
+        solution = { raw: aiResponse.response };
+      }
+
+      // Store this solution for future reference
+      try {
+        await storeMemory(env, `sol_${Date.now()}`, `Problem: "${body.problem}" → Solution: ${solution.recommended || solution.solutions?.[0]?.approach || "analyzed"}`, { type: "solution" });
+      } catch { /* non-critical */ }
+
+      return Response.json({ solution, constraints: body.constraints }, { headers: corsHeaders });
+    }
+
+    // Route: /grow — Store learnings
+    if (path === "/grow" && request.method === "POST") {
+      const body = await request.json<{ lesson: string; category?: string }>();
+
+      if (!body.lesson) {
+        return Response.json({ error: "lesson is required" }, { status: 400, headers: corsHeaders });
+      }
+
+      const id = `learn_${Date.now()}`;
+      await storeMemory(env, id, body.lesson, { type: "learning", category: body.category || "general" });
+
+      // Store in D1 for structured tracking
+      try {
+        await env.DATA.prepare(
+          "INSERT INTO facts (subject, predicate, object, confidence) VALUES (?, ?, ?, ?)"
+        ).bind("brain", "learned", body.lesson, 1.0).run();
+      } catch { /* non-critical */ }
+
+      return Response.json({
+        stored: true,
+        id,
+        message: "🧠 Lesson stored. The brain grows stronger.",
+        totalLearnings: "tracked in memory + data",
+      }, { headers: corsHeaders });
+    }
+
     // Route: /rules — Get decision rules
     if (path === "/rules") {
       if (request.method === "GET") {
