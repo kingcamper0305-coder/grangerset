@@ -4,14 +4,14 @@
   "description": "Granger's World: Brain, Eyes, Hands",
   "main": "hands/index.js",
   "scripts": {
-    "test": "node --test tests/",
+    "test": "node --test 'tests/**/*.test.js'",
     "eye": "node eye/eye.js",
     "brain": "python3 brain/cli.py"
   },
   "dependencies": {
+    "dotenv": "^17.3.1",
     "puppeteer-core": "^23.0.0"
   },
-  "devDependencies": {},
   "engines": {
     "node": ">=18"
   },
