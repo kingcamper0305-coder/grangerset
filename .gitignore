@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Environment / Secrets
+.env
+.env.local
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Data
+data/
+*.sqlite3
+*.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+tmp/
+*.tmp

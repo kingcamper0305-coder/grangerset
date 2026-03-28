@@ -1,0 +1,19 @@
+{
+  "name": "granger",
+  "version": "1.0.0",
+  "description": "Granger's World: Brain, Eyes, Hands",
+  "main": "hands/index.js",
+  "scripts": {
+    "test": "node --test tests/",
+    "eye": "node eye/eye.js",
+    "brain": "python3 brain/cli.py"
+  },
+  "dependencies": {
+    "puppeteer-core": "^23.0.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}

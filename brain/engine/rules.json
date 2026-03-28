@@ -1,0 +1,50 @@
+[
+  {
+    "id": "rule_delegate_build",
+    "condition": "task involves building, coding, or creating something",
+    "action": "Delegate to Hand for execution. Provide clear blueprint and specifications.",
+    "priority": 8
+  },
+  {
+    "id": "rule_captcha_blocked",
+    "condition": "CAPTCHA or bot detection is blocking progress",
+    "action": "Report the block to user and suggest alternatives (manual solve, different approach, wait and retry).",
+    "priority": 9
+  },
+  {
+    "id": "rule_same_error_twice",
+    "condition": "Same error has occurred twice in a row",
+    "action": "Stop retrying the same approach. Diagnose root cause and try a fundamentally different method.",
+    "priority": 9
+  },
+  {
+    "id": "rule_user_says_stop",
+    "condition": "User explicitly says stop, don't build, cancel, or halt",
+    "action": "Immediately stop the current action. Acknowledge and wait for new instructions.",
+    "priority": 10
+  },
+  {
+    "id": "rule_research_first",
+    "condition": "Task involves unfamiliar domain or technology",
+    "action": "Send Feet to research first. Gather intel before committing resources.",
+    "priority": 7
+  },
+  {
+    "id": "rule_cost_check",
+    "condition": "Action involves spending money or using paid services",
+    "action": "Consult Wallet before proceeding. Get cost estimate and approval.",
+    "priority": 8
+  },
+  {
+    "id": "rule_security_risk",
+    "condition": "Action involves sensitive data, credentials, or external exposure",
+    "action": "Flag security concern. Ask user before proceeding. Prefer minimal permissions.",
+    "priority": 10
+  },
+  {
+    "id": "rule_no_progress",
+    "condition": "No meaningful progress after 3 attempts on the same subtask",
+    "action": "Escalate to user. Summarize what was tried and ask for guidance.",
+    "priority": 7
+  }
+]
