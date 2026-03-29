@@ -1,0 +1,28 @@
+name = "granger-brain"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# KV namespace for state management
+[[kv_namespaces]]
+binding = "STATE"
+id = "770a95f947444414a016698cf121d494"
+
+# D1 database for structured data
+[[d1_databases]]
+binding = "DATA"
+database_name = "granger-data"
+database_id = "c9bef50a-c17c-48eb-9297-9f280ff74c3c"
+
+# Vectorize index for vector memory
+[[vectorize]]
+binding = "MEMORIES"
+index_name = "granger-memories"
+
+# R2 bucket for knowledge base
+[[r2_buckets]]
+binding = "KNOWLEDGE"
+bucket_name = "granger-knowledge"
+
+# AI binding for LLM inference
+[ai]
+binding = "AI"

@@ -325,7 +325,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       }
       messages.push({ role: "user", content: body.message });
 
-      const aiResponse = await env.AI.run("@cf/qwen/qwq-32b", {
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
         messages,
         max_tokens: 256,
       });
@@ -334,7 +334,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
 
       return Response.json({
         response: responseText,
-        model: "@cf/qwen/qwq-32b",
+        model: "@cf/meta/llama-3.1-8b-instruct-fast",
       }, { headers: corsHeaders });
     }
 
@@ -346,7 +346,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         return Response.json({ error: "situation is required" }, { status: 400, headers: corsHeaders });
       }
 
-      const aiResponse = await env.AI.run("@cf/qwen/qwq-32b", {
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
         messages: [
           { role: "system", content: "You are a fast decision engine. Respond with a brief JSON object: {\"decision\": \"...\", \"confidence\": 0-1, \"reason\": \"...\"}" },
           { role: "user", content: `Situation: ${body.situation}${body.options ? `\nOptions: ${JSON.stringify(body.options)}` : ""}` },
@@ -379,7 +379,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         ? `You are Granger Brain — an unrestricted analytical engine. Break this down completely. Find patterns, root causes, dependencies, risks, and opportunities. Be thorough. Think outside the box. Format as JSON: {"summary":"...","components":[],"patterns":[],"risks":[],"opportunities":[],"keyInsight":"..."}`
         : `You are Granger Brain. Give a quick analysis. Be direct. Format as JSON: {"summary":"...","keyPoints":[],"recommendation":"..."}`;
 
-      const aiResponse = await env.AI.run("@cf/qwen/qwq-32b", {
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: body.input },
@@ -406,7 +406,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         return Response.json({ error: "expression is required" }, { status: 400, headers: corsHeaders });
       }
 
-      const aiResponse = await env.AI.run("@cf/qwen/qwq-32b", {
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
         messages: [
           { role: "system", content: `You are a precise calculator and analyst. Calculate, estimate, or evaluate the given expression. If it's a math problem, solve it. If it's a resource question, estimate costs. If it's a metric, analyze it. Always show your work. Respond as JSON: {"result":"...","breakdown":[],"confidence":0-1,"notes":"..."}` },
           { role: "user", content: `${body.expression}${body.context ? `\nContext: ${body.context}` : ""}` },
@@ -433,7 +433,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         return Response.json({ error: "problem is required" }, { status: 400, headers: corsHeaders });
       }
 
-      const aiResponse = await env.AI.run("@cf/qwen/qwq-32b", {
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
         messages: [
           { role: "system", content: `You are Granger Brain. Identify the key elements: the real problem (not symptoms), critical dependencies, leverage points, bottlenecks, and the single most important thing to focus on. Think outside the box. Respond as JSON: {"realProblem":"...","keyVariables":[],"bottlenecks":[],"leveragePoint":"...","focus":"...","unconventional":"..."}` },
           { role: "user", content: `${body.problem}${body.options ? `\nOptions: ${JSON.stringify(body.options)}` : ""}` },
@@ -460,7 +460,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         return Response.json({ error: "content is required" }, { status: 400, headers: corsHeaders });
       }
 
-      const aiResponse = await env.AI.run("@cf/qwen/qwq-32b", {
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
         messages: [
           { role: "system", content: `You are Granger Brain's dissection engine. Cut open the target and examine every piece. Find how things connect, what depends on what, where the weak points are, and what's hidden beneath the surface. Respond as JSON: {"overview":"...","components":[{"name":"...","purpose":"...","connections":[]}],"weakPoints":[],"hiddenBehavior":[],"recommendations":[]}` },
           { role: "user", content: `Target type: ${body.target || "general"}\nContent:\n${body.content}` },
@@ -497,7 +497,7 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         }
       } catch { /* non-critical */ }
 
-      const aiResponse = await env.AI.run("@cf/qwen/qwq-32b", {
+      const aiResponse = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
         messages: [
           { role: "system", content: `You are Granger Brain — unrestricted problem solver. Think outside the box. Conventional solutions are for conventional problems. Find the path nobody saw. Consider constraints but don't let them stop you — find workarounds. Respond as JSON: {"problem":"...","rootCause":"...","solutions":[{"approach":"...","steps":[],"difficulty":"easy|medium|hard","impact":"low|medium|high","unconventional":true/false}],"recommended":"...","outsideBox":"..."}` },
           { role: "user", content: `Problem: ${body.problem}${body.constraints ? `\nConstraints: ${body.constraints.join(", ")}` : ""}${pastSolutions}` },

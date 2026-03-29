@@ -24,13 +24,19 @@ fi
 
 cd "$INSTALL_DIR/granger-brain"
 
-# Check for API token
-if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+# Check for Cloudflare credentials
+if [ -z "$CLOUDFLARE_API_KEY" ]; then
+  read -sp "🔑 Cloudflare Global API Key: " CLOUDFLARE_API_KEY
   echo ""
-  echo "⚠️  Set your Cloudflare API token:"
-  echo "   export CLOUDFLARE_API_TOKEN=your_token_here"
+  export CLOUDFLARE_API_KEY
+fi
+if [ -z "$CLOUDFLARE_EMAIL" ]; then
+  read -p "📧 Cloudflare Email: " CLOUDFLARE_EMAIL
   echo ""
-  echo "   Then run: cd $INSTALL_DIR/granger-brain && wrangler deploy"
+  export CLOUDFLARE_EMAIL
+fi
+
+if [ -z "$CLOUDFLARE_API_KEY" ]; then
   echo ""
   echo "   Or run locally:"
   echo "   wrangler dev --port 8787"
