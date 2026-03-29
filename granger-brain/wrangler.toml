@@ -18,10 +18,10 @@ database_id = "5addbf68-3740-41fb-a1ce-1b82da7488e0"
 binding = "MEMORIES"
 index_name = "granger-memories"
 
-# R2 bucket for knowledge base (uncomment after enabling R2)
-# [[r2_buckets]]
-# binding = "KNOWLEDGE"
-# bucket_name = "granger-knowledge"
+# R2 bucket for knowledge base
+[[r2_buckets]]
+binding = "KNOWLEDGE"
+bucket_name = "granger-knowledge"
 
 # AI binding for LLM inference
 [ai]

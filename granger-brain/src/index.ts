@@ -17,7 +17,7 @@ interface Env {
   STATE: KVNamespace;
   DATA: D1Database;
   MEMORIES: VectorizeIndex;
-  // KNOWLEDGE: R2Bucket; // Uncomment after R2 is enabled
+  KNOWLEDGE: R2Bucket;
 }
 
 interface DecisionRule {
@@ -545,6 +545,50 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
         message: "🧠 Lesson stored. The brain grows stronger.",
         totalLearnings: "tracked in memory + data",
       }, { headers: corsHeaders });
+    }
+
+    // Route: /knowledge — R2 knowledge base (upload & retrieve docs)
+    if (path === "/knowledge") {
+      if (request.method === "POST") {
+        const contentType = request.headers.get("content-type") || "";
+        const key = url.searchParams.get("key") || `doc_${Date.now()}`;
+        
+        if (contentType.includes("application/json")) {
+          const body = await request.json<{ content: string; key?: string; metadata?: Record<string, string> }>();
+          await env.KNOWLEDGE.put(body.key || key, body.content, {
+            customMetadata: body.metadata || {},
+          });
+          // Also index in vector memory
+          await storeMemory(env, `kb_${Date.now()}`, body.content, { source: body.key || key, type: "knowledge" });
+          return Response.json({ success: true, key: body.key || key }, { headers: corsHeaders });
+        } else {
+          // Raw file upload
+          await env.KNOWLEDGE.put(key, request.body!, { httpMetadata: { contentType } });
+          return Response.json({ success: true, key }, { headers: corsHeaders });
+        }
+      }
+      if (request.method === "GET") {
+        const key = url.searchParams.get("key");
+        const list = url.searchParams.get("list");
+        
+        if (list !== null) {
+          const objects = await env.KNOWLEDGE.list();
+          return Response.json({ objects: objects.objects.map(o => ({ key: o.key, size: o.size, uploaded: o.uploaded })) }, { headers: corsHeaders });
+        }
+        if (key) {
+          const obj = await env.KNOWLEDGE.get(key);
+          if (!obj) return Response.json({ error: "Not found" }, { status: 404, headers: corsHeaders });
+          const text = await obj.text();
+          return Response.json({ key, content: text, metadata: obj.customMetadata }, { headers: corsHeaders });
+        }
+        return Response.json({ error: "key or list param required" }, { status: 400, headers: corsHeaders });
+      }
+      if (request.method === "DELETE") {
+        const key = url.searchParams.get("key");
+        if (!key) return Response.json({ error: "key required" }, { status: 400, headers: corsHeaders });
+        await env.KNOWLEDGE.delete(key);
+        return Response.json({ success: true, deleted: key }, { headers: corsHeaders });
+      }
     }
 
     // Route: /rules — Get decision rules
