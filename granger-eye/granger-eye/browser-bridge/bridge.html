@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌉 Granger Browser Bridge</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #e0e0e0; font-family: monospace; overflow: hidden; }
+  .header { 
+    display: flex; align-items: center; gap: 12px; 
+    padding: 8px 16px; background: #12121a; border-bottom: 1px solid #2a2a3e;
+  }
+  .header h1 { font-size: 1em; color: #7eb8ff; }
+  .status { font-size: 0.8em; color: #666; }
+  .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+  .status .dot.on { background: #4ade80; animation: pulse 2s infinite; }
+  .status .dot.off { background: #f87171; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .url-bar {
+    display: flex; gap: 8px; padding: 8px 16px; background: #12121a;
+  }
+  .url-bar input {
+    flex: 1; padding: 8px 12px; background: #0d0d14; border: 1px solid #2a3a4e;
+    border-radius: 6px; color: #e0e0e0; font-family: monospace; font-size: 0.9em;
+  }
+  .url-bar input:focus { outline: none; border-color: #5b9bd5; }
+  .url-bar button {
+    padding: 8px 16px; background: #1a3a5a; border: 1px solid #3a5a8a;
+    border-radius: 6px; color: #7eb8ff; cursor: pointer; font-family: monospace;
+  }
+  .url-bar button:hover { background: #2a4a6a; }
+
+  .browser-frame {
+    width: 100%; height: calc(100vh - 100px); background: #000;
+    position: relative; cursor: crosshair;
+  }
+  .browser-frame img {
+    width: 100%; height: 100%; object-fit: contain;
+    image-rendering: auto;
+  }
+  .browser-frame .click-feedback {
+    position: absolute; width: 20px; height: 20px; border: 2px solid #7eb8ff;
+    border-radius: 50%; pointer-events: none; animation: clickRipple 0.5s ease-out forwards;
+  }
+  @keyframes clickRipple {
+    0% { transform: scale(0.5); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+
+  .toolbar {
+    display: flex; gap: 4px; padding: 0 8px;
+  }
+  .toolbar button {
+    padding: 4px 10px; background: transparent; border: 1px solid #2a3a4e;
+    border-radius: 4px; color: #888; cursor: pointer; font-size: 0.8em;
+  }
+  .toolbar button:hover { color: #7eb8ff; border-color: #5b9bd5; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌉 Browser Bridge</h1>
+  <div class="toolbar">
+    <button onclick="goBack()">◀</button>
+    <button onclick="goForward()">▶</button>
+    <button onclick="refresh()">⟳</button>
+  </div>
+  <span class="status">
+    <span class="dot off" id="statusDot"></span>
+    <span id="statusText">Connecting...</span>
+  </span>
+</div>
+
+<div class="url-bar">
+  <input id="urlInput" placeholder="Enter URL..." value="https://google.com"
+    onkeydown="if(event.key==='Enter')navigate(this.value)">
+  <button onclick="navigate(document.getElementById('urlInput').value)">Go</button>
+</div>
+
+<div class="browser-frame" id="browserFrame">
+  <img id="screenImg" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Browser">
+</div>
+
+<script>
+let ws = null;
+let connected = false;
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}`);
+  
+  ws.onopen = () => {
+    connected = true;
+    document.getElementById('statusDot').className = 'dot on';
+    document.getElementById('statusText').textContent = 'Connected';
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'screenshot' && msg.data) {
+      document.getElementById('screenImg').src = `data:image/jpeg;base64,${msg.data}`;
+    }
+    if (msg.type === 'result' && msg.url) {
+      document.getElementById('urlInput').value = msg.url;
+    }
+  };
+
+  ws.onclose = () => {
+    connected = false;
+    document.getElementById('statusDot').className = 'dot off';
+    document.getElementById('statusText').textContent = 'Disconnected';
+    setTimeout(connect, 2000);
+  };
+}
+
+function send(cmd) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(cmd));
+  }
+}
+
+function navigate(url) {
+  if (!url.startsWith('http')) url = 'https://' + url;
+  document.getElementById('urlInput').value = url;
+  send({ action: 'goto', url });
+}
+
+function goBack() { send({ action: 'back' }); }
+function goForward() { send({ action: 'forward' }); }
+function refresh() { navigate(document.getElementById('urlInput').value); }
+
+// Click handling
+document.getElementById('browserFrame').addEventListener('click', (e) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = Math.round((e.clientX - rect.left) * (1280 / rect.width));
+  const y = Math.round((e.clientY - rect.top) * (720 / rect.height));
+  send({ action: 'click', x, y });
+  
+  // Visual feedback
+  const ripple = document.createElement('div');
+  ripple.className = 'click-feedback';
+  ripple.style.left = (e.clientX - rect.left - 10) + 'px';
+  ripple.style.top = (e.clientY - rect.top - 10) + 'px';
+  e.currentTarget.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+});
+
+// Scroll handling
+document.getElementById('browserFrame').addEventListener('wheel', (e) => {
+  e.preventDefault();
+  send({ action: 'scroll', deltaY: e.deltaY });
+}, { passive: false });
+
+// Keyboard handling
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  send({ action: 'press', key: e.key });
+});
+
+// Type into focused element on the page
+let typingMode = false;
+document.addEventListener('keypress', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key.length === 1) {
+    send({ action: 'type', text: e.key });
+  }
+});
+
+connect();
+</script>
+</body>
+</html>

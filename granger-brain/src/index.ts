@@ -615,9 +615,67 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       }
     }
 
-    // 404
+    // ─── Billing: Init Tables ────────────────────────────────────────────
+
+    if (path === "/billing/init" && request.method === "POST") {
+      await initBillingTables(env);
+      return Response.json({ success: true, message: "Billing tables created" }, { headers: corsHeaders });
+    }
+
+    // ─── Billing: Validate API Key ──────────────────────────────────────
+
+    if (path === "/billing/validate" && request.method === "POST") {
+      const body = await request.json<{ apiKey: string }>();
+      if (!body.apiKey) return Response.json({ error: "apiKey required" }, { status: 400, headers: corsHeaders });
+
+      const keyData = await validateApiKey(env, body.apiKey);
+      if (!keyData) return Response.json({ error: "Invalid API key" }, { status: 401, headers: corsHeaders });
+
+      const usage = await getUsage(env, body.apiKey);
+      return Response.json({ valid: true, plan: (keyData as any).plan, usage, limits: getLimits((keyData as any).plan) }, { headers: corsHeaders });
+    }
+
+    // ─── Billing: Create API Key ────────────────────────────────────────
+
+    if (path === "/billing/create-key" && request.method === "POST") {
+      const body = await request.json<{ name: string; plan?: string; email?: string }>();
+      if (!body.name) return Response.json({ error: "name required" }, { status: 400, headers: corsHeaders });
+
+      const plan = body.plan || "free";
+      const apiKey = `gb_${generateApiKey()}`;
+
+      await initBillingTables(env);
+      await env.DATA.prepare(
+        "INSERT INTO api_keys (key_hash, name, email, plan, created_at) VALUES (?, ?, ?, ?, ?)"
+      ).bind(await hashKey(apiKey), body.name, body.email || "", plan, new Date().toISOString()).run();
+
+      return Response.json({ apiKey, plan, limits: getLimits(plan), message: "Save this key — it won't be shown again" }, { headers: corsHeaders });
+    }
+
+    // ─── Billing: Usage Stats ──────────────────────────────────────────
+
+    if (path === "/billing/usage" && request.method === "GET") {
+      const apiKey = request.headers.get("X-API-Key") || url.searchParams.get("key");
+      if (!apiKey) return Response.json({ error: "X-API-Key header required" }, { status: 401, headers: corsHeaders });
+
+      const keyData = await validateApiKey(env, apiKey);
+      if (!keyData) return Response.json({ error: "Invalid API key" }, { status: 401, headers: corsHeaders });
+
+      const usage = await getUsage(env, apiKey);
+      const limits = getLimits((keyData as any).plan);
+      return Response.json({ plan: (keyData as any).plan, usage, limits }, { headers: corsHeaders });
+    }
+
+    // ─── Billing: List Plans ──────────────────────────────────────────
+
+    if (path === "/billing/plans" && request.method === "GET") {
+      return Response.json({ plans: PLANS }, { headers: corsHeaders });
+    }
+
+    // ─── 404 ───────────────────────────────────────────────────────────
+
     return Response.json(
-      { error: "Not found", path, availableRoutes: ["/health", "/think", "/memory", "/state/:key", "/data/query", "/data/init", "/rules"] },
+      { error: "Not found", path, availableRoutes: ["/health", "/think", "/memory", "/state/:key", "/data/query", "/data/init", "/rules", "/billing/init", "/billing/create-key", "/billing/validate", "/billing/usage", "/billing/plans"] },
       { status: 404, headers: corsHeaders }
     );
   } catch (error) {
@@ -626,6 +684,99 @@ async function handleRequest(request: Request, env: Env): Promise<Response> {
       { status: 500, headers: corsHeaders }
     );
   }
+}
+
+// ─── Billing Helpers ─────────────────────────────────────────────────
+
+const PLANS: Record<string, { callsPerDay: number; callsPerMin: number; price: number }> = {
+  free:     { callsPerDay: 100,   callsPerMin: 5,   price: 0 },
+  pro:      { callsPerDay: 10000, callsPerMin: 60,  price: 19 },
+  business: { callsPerDay: 100000,callsPerMin: 300, price: 99 },
+};
+
+function getLimits(plan: string) {
+  return PLANS[plan] || PLANS.free;
+}
+
+function generateApiKey(): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 32; i++) result += chars[Math.floor(Math.random() * chars.length)];
+  return result;
+}
+
+async function hashKey(key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(key);
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function validateApiKey(env: Env, apiKey: string) {
+  try {
+    const hash = await hashKey(apiKey);
+    const result = await env.DATA.prepare("SELECT * FROM api_keys WHERE key_hash = ? AND active = 1").bind(hash).first();
+    return result;
+  } catch { return null; }
+}
+
+async function getUsage(env: Env, apiKey: string) {
+  try {
+    const hash = await hashKey(apiKey);
+    const today = new Date().toISOString().split("T")[0];
+    const result = await env.DATA.prepare("SELECT SUM(calls) as total_calls FROM api_usage WHERE key_hash = ? AND date = ?").bind(hash, today).first();
+    const minute = new Date().toISOString().slice(0, 16);
+    const resultMin = await env.DATA.prepare("SELECT SUM(calls) as minute_calls FROM api_usage_minute WHERE key_hash = ? AND minute = ?").bind(hash, minute).first();
+    return { today: (result as any)?.total_calls || 0, thisMinute: (resultMin as any)?.minute_calls || 0 };
+  } catch { return { today: 0, thisMinute: 0 }; }
+}
+
+async function trackUsage(env: Env, apiKey: string, endpoint: string) {
+  try {
+    const hash = await hashKey(apiKey);
+    const today = new Date().toISOString().split("T")[0];
+    const minute = new Date().toISOString().slice(0, 16);
+    await env.DATA.prepare("INSERT INTO api_usage (key_hash, date, endpoint, calls) VALUES (?, ?, ?, 1) ON CONFLICT(key_hash, date, endpoint) DO UPDATE SET calls = calls + 1").bind(hash, today, endpoint).run();
+    await env.DATA.prepare("INSERT INTO api_usage_minute (key_hash, minute, calls) VALUES (?, ?, 1) ON CONFLICT(key_hash, minute) DO UPDATE SET calls = calls + 1").bind(hash, minute).run();
+  } catch { /* non-critical */ }
+}
+
+async function checkRateLimit(env: Env, apiKey: string, plan: string): Promise<{ allowed: boolean; reason?: string }> {
+  const limits = getLimits(plan);
+  const usage = await getUsage(env, apiKey);
+  if (usage.today >= limits.callsPerDay) return { allowed: false, reason: `Daily limit reached (${limits.callsPerDay} calls)` };
+  if (usage.thisMinute >= limits.callsPerMin) return { allowed: false, reason: `Rate limit exceeded (${limits.callsPerMin}/min)` };
+  return { allowed: true };
+}
+
+// ─── Billing: Init Tables ────────────────────────────────────────────
+
+async function initBillingTables(env: Env) {
+  await env.DATA.batch([
+    env.DATA.prepare(`CREATE TABLE IF NOT EXISTS api_keys (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key_hash TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      email TEXT DEFAULT '',
+      plan TEXT DEFAULT 'free',
+      active INTEGER DEFAULT 1,
+      stripe_customer_id TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`),
+    env.DATA.prepare(`CREATE TABLE IF NOT EXISTS api_usage (
+      key_hash TEXT NOT NULL,
+      date TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      calls INTEGER DEFAULT 0,
+      PRIMARY KEY (key_hash, date, endpoint)
+    )`),
+    env.DATA.prepare(`CREATE TABLE IF NOT EXISTS api_usage_minute (
+      key_hash TEXT NOT NULL,
+      minute TEXT NOT NULL,
+      calls INTEGER DEFAULT 0,
+      PRIMARY KEY (key_hash, minute)
+    )`),
+  ]);
 }
 
 // ─── Entry Point ─────────────────────────────────────────────────────
