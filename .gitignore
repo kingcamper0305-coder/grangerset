@@ -43,3 +43,6 @@ openclaw-key.pem
 # Temp
 tmp/
 *.tmp
+*.sqlite
+*.sqlite3
+slotopol
