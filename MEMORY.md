@@ -22,19 +22,10 @@
 - Exploitation: msfconsole, msfvenom
 - Headless browser: agent-browser (Chrome 147)
 
-## Casino Analysis
-- Studied 340 real casino games from slotopol
-- Built Slot Penetrator skill - detects RTP configs
-- Key insight: Same game has 18 configs from 87% to 110% RTP
-- 100%+ configs exist = player edge
-
 ## Earning Systems
-- 10 earning systems designed in earning-systems.md
-- Poker: Registered at agentcasino.dev, 500k chips, game plan set
-- Priority: Poker grinding → OSINT services → Bug bounty → Web automation
+- 8 earning systems designed in earning-systems.md
+- Priority: OSINT services → Bug bounty → Web automation
 
 ## Skills Installed
-- casino (Agent Casino poker)
-- slot-penetrator (RTP detection)
 - agent-browser (headless Chrome)
 - thesethrose-agent-browser (browser automation)
