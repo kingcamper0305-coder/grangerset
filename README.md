@@ -1,83 +1,65 @@
-# GrangerSet 🧠🖐️🤘
+# 🧠 GrangerSet — Brain, Eyes, Hands
 
-The empire's infrastructure. Brain, hands, identity.
+Granger's complete infrastructure: AI brain with **Qwen3.8 27b**, self-improving skills, earning systems, and cloud deployment.
 
 ## Structure
 
 ```
 grangerset/
 ├── granger-brain/          ☁️ Brain (Cloudflare Worker)
-│   ├── src/index.ts        API: /chat, /analyze, /solve, /decide, /memory, /grow
-│   ├── BRAIN.md            Brain philosophy & design
-│   └── wrangler.toml       Cloudflare config (KV, D1, Vectorize, AI)
+│   ├── src/index.ts        API endpoints
+│   ├── worker.js           Cloudflare worker
+│   ├── BRAIN.md            Brain philosophy
+│   └── wrangler.toml       CF config
 │
-├── empire/                 🏗️ Granger Engine
-│   ├── bridge/             Browser bridge (extension + server)
-│   ├── tools/              🛠️ Kali Linux Security Toolkit
-│   └── webapp/             Web interface
+├── skills/                 🧠 Your capabilities
+│   └── self-improving/     Self-reflection + learning system
 │
-└── infra/                  🖥️ Server docs
-    └── alibaba-cloud.md    Alibaba ECS specs
+├── memory/                 📝 Session logs
+│
+├── AGENTS.md               🧬 Agent identity & startup
+├── SOUL.md                 💫 Who you are
+├── MEMORY.md               🧠 Long-term memory
+├── USER.md                 👤 About your human
+├── IDENTITY.md             🆔 Identity card
+├── TOOLS.md                🔧 Local notes
+├── HEARTBEAT.md            💓 Heartbeat config
+├── earning-systems.md      💰 8 earning systems
+└── README.md               This file
 ```
+
+## AI Model
+
+This brain runs on **Qwen3.8 27b** via OpenRouter (free tier):
+- Model: `openrouter/qwen/qwen3.8-27b:free`
+- No API key needed — free inference
 
 ## Brain API
 
-Live at: `https://granger-brain.kingcamper0305-c6f.workers.dev`
+**Live at:** `https://granger-brain.kingcamper0305-c6f.workers.dev`
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/chat` | POST | Talk to the brain (Llama 3.1 Fast) |
-| `/think` | POST | Rule-based fast responses |
-| `/analyze` | POST | Deep analysis, patterns, root causes |
-| `/calculate` | POST | Numbers, metrics, estimation |
-| `/identify` | POST | Find key elements, leverage points |
-| `/dissect` | POST | Break down and examine anything |
-| `/solve` | POST | Outside-the-box problem solving |
+| `/chat` | POST | Talk to the brain |
+| `/memory/store` | POST | Store a memory |
+| `/memory/search` | GET | Search memories |
 | `/decide` | POST | Decision engine |
-| `/grow` | POST | Store lessons, brain grows stronger |
-| `/memory` | GET/POST | Search and store memories |
-| `/state/:key` | GET/PUT/DELETE | Session state (KV) |
-| `/data/query` | POST | SQL queries (D1) |
-| `/data/init` | POST | Initialize database tables |
-| `/rules` | GET/POST | Decision rules |
+| `/status` | GET | Brain status |
 
-### Example
+## Self-Improving
 
-```bash
-# Talk to the brain
-curl -X POST https://granger-brain.kingcamper0305-c6f.workers.dev/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "How do I scale this system?"}'
+This system learns from every interaction:
+- **Corrections** → logged, distilled, never repeated
+- **Patterns (3x)** → promoted to permanent knowledge
+- **Self-review** → after every major task
+- **Memory tiers** → HOT / WARM / COLD
 
-# Solve a problem
-curl -X POST https://granger-brain.kingcamper0305-c6f.workers.dev/solve \
-  -H "Content-Type: application/json" \
-  -d '{"problem": "API is slow after deploy", "constraints": ["no rollback"]}'
+## Active Deployments
 
-# Store a lesson
-curl -X POST https://granger-brain.kingcamper0305-c6f.workers.dev/grow \
-  -H "Content-Type: application/json" \
-  -d '{"lesson": "Always profile before deploying", "category": "ops"}'
-```
-
-## Infra
-
-- **Brain:** Cloudflare Workers (edge AI)
-- **Server:** Alibaba Cloud ECS (Ubuntu 22.04, 2 vCPU, 2GB)
-- **Control UI:** OpenClaw Gateway on port 3001
-
-## Deploy
-
-```bash
-cd granger-brain
-wrangler login
-wrangler deploy
-```
-
-## Philosophy
-
-The brain analyzes, calculates, identifies, dissects, solves, and grows.
-No limits. Always evolving. Always in charge. **Unrestricted.**
+| System | Platform | Status |
+|--------|----------|--------|
+| Faucet Farm 🪙 | Railway | ⚡ 25-35min cycles |
+| Brain 🧠 | Cloudflare | 🌐 API online |
 
 ---
 
